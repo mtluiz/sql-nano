@@ -10,7 +10,7 @@ typedef struct {
 } Ibuffer;
 
 Ibuffer* newIbuffer(){
-    Ibuffer* ibuffer = malloc(sizeOf(IBuffer));
+    Ibuffer* ibuffer = malloc(sizeof(Ibuffer));
     ibuffer->buffer= NULL;
     ibuffer->buffer_length = 0;
     ibuffer->input_length = 0;
@@ -19,7 +19,7 @@ Ibuffer* newIbuffer(){
 
 void printTerminal() { printf("db > "); }
 
-void readInput( IBuffer* ibuffer ){
+void readInput( Ibuffer* ibuffer ){
     ssize_t bytesRead = getline(&(ibuffer->buffer), &(ibuffer->buffer_length), stdin);
 
     if(bytesRead <= 0){
@@ -36,3 +36,16 @@ void closeInputBuffer(Ibuffer* ibuffer){
     free(ibuffer);
 }
 
+int main(int argc, char* argv[]){
+    Ibuffer* ibuffer = newIbuffer();
+    while(true){
+        printTerminal();
+        readInput( ibuffer );
+        if (strcmp(ibuffer->buffer, ".sair")) {
+            closeInputBuffer(ibuffer);
+            exit(EXIT_SUCCESS);
+        } else {
+            printf("Comando desconhecido '%s'.\n", ibuffer->buffer);
+        }
+    }
+}

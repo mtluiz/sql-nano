@@ -10,17 +10,6 @@ typedef struct
     ssize_t input_length;
 } Ibuffer;
 
-Ibuffer *newIbuffer()
-{
-    Ibuffer *ibuffer = malloc(sizeof(Ibuffer));
-    ibuffer->buffer = NULL;
-    ibuffer->buffer_length = 0;
-    ibuffer->input_length = 0;
-    return ibuffer;
-}
-
-void printTerminal() { printf("db > "); }
-
 typedef enum
 {
     META_COMMAND_SUCCESS,
@@ -32,6 +21,27 @@ typedef enum
     PREPARE_SUCCESS,
     PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
+
+typedef enum
+{
+    STATEMENT_INSERT,
+    STATEMENT_SELECT
+} StatementType;
+
+typedef struct
+{
+    StatementType type;
+} Statement;
+
+Ibuffer *newIbuffer()
+{
+    Ibuffer *ibuffer = malloc(sizeof(Ibuffer));
+    ibuffer->buffer = NULL;
+    ibuffer->buffer_length = 0;
+    ibuffer->input_length = 0;
+    return ibuffer;
+}
+void printTerminal() { printf("db > "); }
 
 void readInput(Ibuffer *ibuffer)
 {
@@ -53,6 +63,39 @@ void closeInputBuffer(Ibuffer *ibuffer)
     free(ibuffer);
 }
 
+MetaCommandResult doMetaCommand(Ibuffer* ibuffer){
+    if(strcmp(ibuffer->buffer, ".sair") == 0){
+        exit(EXIT_SUCCESS);
+    } else {
+        return META_COMMAND_UNRECOGNIZED_COMMAND;
+    }
+}
+
+PrepareResult prepareStatement(Ibuffer* ibuffer, Statement* statement){
+    if(strncmp(ibuffer->buffer, "insert", 6) == 0){
+        statement->type = STATEMENT_INSERT;
+        return PREPARE_SUCCESS;
+    }
+
+    if(strncmp(ibuffer->buffer, "select", 6) == 0){
+        statement->type = STATEMENT_SELECT;
+        return PREPARE_SUCCESS;
+    }
+
+    return PREPARE_UNRECOGNIZED_STATEMENT;
+}
+
+void executeStatement(Statement* statement){
+    switch(statement->type){
+        case(STATEMENT_INSERT):
+            printf("Aqui faremos um insert");
+            break;
+        case(STATEMENT_SELECT):
+            printf("Aqui faremos um select");
+            break;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     Ibuffer *ibuffer = newIbuffer();
@@ -63,17 +106,7 @@ int main(int argc, char *argv[])
 
         readInput(ibuffer);
 
-        if (strcmp(ibuffer->buffer, ".sair") == 0)
-        {
-            closeInputBuffer(ibuffer);
-            exit(EXIT_SUCCESS);
-        }
-        else
-        {
-            printf("Comando desconhecido '%s'.\n", ibuffer->buffer);
-        }
-
-        if (ibuffer->buffer[0] == ".")
+        if (ibuffer->buffer[0] == '.')
         {
             switch (doMetaCommand(ibuffer))
             {
@@ -85,7 +118,7 @@ int main(int argc, char *argv[])
         }
 
         Statement statement;
-        switch (prepare_statement(ibuffer, &statement))
+        switch (prepareStatement(ibuffer, &statement))
         {
         case (PREPARE_SUCCESS):
             break;

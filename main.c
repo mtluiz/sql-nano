@@ -19,6 +19,8 @@ Ibuffer* newIbuffer(){
 
 void printTerminal() { printf("db > "); }
 
+
+
 void readInput( Ibuffer* ibuffer ){
     ssize_t bytesRead = getline(&(ibuffer->buffer), &(ibuffer->buffer_length), stdin);
 
@@ -31,21 +33,50 @@ void readInput( Ibuffer* ibuffer ){
     ibuffer->buffer[bytesRead -1] = 0;
 }
 
+
+
 void closeInputBuffer(Ibuffer* ibuffer){
     free(ibuffer->buffer);
     free(ibuffer);
 }
 
+
+
+
 int main(int argc, char* argv[]){
     Ibuffer* ibuffer = newIbuffer();
     while(true){
+
         printTerminal();
+
         readInput( ibuffer );
-        if (strcmp(ibuffer->buffer, ".sair")) {
+        
+        if (strcmp(ibuffer->buffer, ".sair") == 0) {
             closeInputBuffer(ibuffer);
             exit(EXIT_SUCCESS);
         } else {
             printf("Comando desconhecido '%s'.\n", ibuffer->buffer);
         }
+
+        if(ibuffer->buffer[0] == "."){
+            switch(doMetaCommand(ibuffer)) {
+                case(META_COMMAND_SUCCESS):
+                 continue;
+                case(META_COMMAND_UNRECOGNIZED_COMMAND):
+                 printf("Comando desconhecido '%s'.\n", ibuffer->buffer);
+            }
+        }
+
+        Statement statement;
+        switch(prepare_statement(ibuffer, &statement)){
+            case(PREPARE_SUCCESS):
+                break;
+            case(PREPARE_UNRECOGNIZED_STATEMENT):
+                printf("Palavra-chave desconhecida no inicio de '%s'. \n ", ibuffer->buffer);
+                continue;
+        }
+
+        executeStatement(&statement);
+        printf("Executado. \n");
     }
 }

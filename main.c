@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define COLUMN_USERNAME_SIZE 32
+#define COLUMN_EMAIL_SIZE 255
 typedef struct
 {
     char *buffer;
@@ -19,7 +21,8 @@ typedef enum
 typedef enum
 {
     PREPARE_SUCCESS,
-    PREPARE_UNRECOGNIZED_STATEMENT
+    PREPARE_UNRECOGNIZED_STATEMENT,
+    PREPARE_SYNTAX_ERROR
 } PrepareResult;
 
 typedef enum
@@ -30,7 +33,14 @@ typedef enum
 
 typedef struct
 {
+    uint32_t id;
+    char username[COLUMN_USERNAME_SIZE];
+    char email[COLUMN_EMAIL_SIZE];
+} Row;
+typedef struct
+{
     StatementType type;
+    Row rowToInsert;
 } Statement;
 
 Ibuffer *newIbuffer()
@@ -63,21 +73,33 @@ void closeInputBuffer(Ibuffer *ibuffer)
     free(ibuffer);
 }
 
-MetaCommandResult doMetaCommand(Ibuffer* ibuffer){
-    if(strcmp(ibuffer->buffer, ".sair") == 0){
+MetaCommandResult doMetaCommand(Ibuffer *ibuffer)
+{
+    if (strcmp(ibuffer->buffer, ".sair") == 0)
+    {
         exit(EXIT_SUCCESS);
-    } else {
+    }
+    else
+    {
         return META_COMMAND_UNRECOGNIZED_COMMAND;
     }
 }
 
-PrepareResult prepareStatement(Ibuffer* ibuffer, Statement* statement){
-    if(strncmp(ibuffer->buffer, "insert", 6) == 0){
+PrepareResult prepareStatement(Ibuffer *ibuffer, Statement *statement)
+{
+    if (strncmp(ibuffer->buffer, "insert", 6) == 0)
+    {
         statement->type = STATEMENT_INSERT;
+        int assignedArgs = sscanf(ibuffer->buffer, "insert %d %s %s", &(statement->rowToInsert.id), statement->rowToInsert.username, statement->rowToInsert.email);
+        if (assignedArgs < 3)
+        {
+            return PREPARE_SYNTAX_ERROR;
+        }
         return PREPARE_SUCCESS;
     }
 
-    if(strncmp(ibuffer->buffer, "select", 6) == 0){
+    if (strncmp(ibuffer->buffer, "select", 6) == 0)
+    {
         statement->type = STATEMENT_SELECT;
         return PREPARE_SUCCESS;
     }
@@ -85,15 +107,17 @@ PrepareResult prepareStatement(Ibuffer* ibuffer, Statement* statement){
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
-void executeStatement(Statement* statement){
-    switch(statement->type){
-        case(STATEMENT_INSERT):
-            printf("Aqui faremos um insert");
-            break;
-        case(STATEMENT_SELECT):
-            printf("Aqui faremos um select");
-            break;
-    }
+void executeStatement(Statement *statement)
+{
+    switch (statement->type)
+    {
+    case (STATEMENT_INSERT):
+        printf("Aqui faremos um insert");
+        break;
+    case (STATEMENT_SELECT):
+        printf("Aqui faremos um select");
+        break;
+    };
 }
 
 int main(int argc, char *argv[])
